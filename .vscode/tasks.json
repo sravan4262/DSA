@@ -1,0 +1,67 @@
+{
+  // Tasks operate on the FILE CURRENTLY OPEN in the editor. There is no project
+  // or solution anywhere in this repo — .NET 10 file-based apps let a single .cs
+  // file be the whole program, so these tasks just point `dotnet` at ${file}.
+  "version": "2.0.0",
+  "tasks": [
+    {
+      // Used by the debugger as a preLaunchTask. Builds the open .cs file and
+      // drops Arrays.dll + Arrays.pdb into .artifacts/bin/debug/ at the repo
+      // root. The .pdb is what lets breakpoints bind to source lines.
+      "label": "build current C# file",
+      "type": "process",
+      "command": "dotnet",
+      // Absolute path on Windows so the task works even when VS Code's PATH is
+      // stale (e.g. it was open when the SDK was installed).
+      "windows": { "command": "C:/Program Files/dotnet/dotnet.exe" },
+      "args": [
+        "build",
+        "${file}",
+        "--artifacts-path",
+        "${workspaceFolder}/.artifacts"
+      ],
+      "problemMatcher": "$msCompile",
+      "presentation": {
+        "reveal": "silent",
+        "clear": true
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      // Plain run, no debugger. Ctrl+Shift+P -> "Run Task" -> this one.
+      // Prompts for which section to show, same as `dotnet run Arrays.cs -- ops`.
+      "label": "run current C# file",
+      "type": "process",
+      "command": "dotnet",
+      // Absolute path on Windows so the task works even when VS Code's PATH is
+      // stale (e.g. it was open when the SDK was installed).
+      "windows": { "command": "C:/Program Files/dotnet/dotnet.exe" },
+      "args": [
+        "run",
+        "${file}",
+        "--",
+        "${input:mode}"
+      ],
+      "problemMatcher": "$msCompile",
+      "presentation": {
+        "reveal": "always",
+        "clear": true,
+        "panel": "dedicated"
+      }
+    }
+  ],
+  "inputs": [
+    {
+      // Each program in this repo takes one argument selecting a section.
+      // "all" is what it defaults to when run with no arguments.
+      "id": "mode",
+      "type": "pickString",
+      "description": "Which section to run?",
+      "options": ["all", "memory", "ops", "complexity"],
+      "default": "all"
+    }
+  ]
+}

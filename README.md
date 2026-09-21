@@ -327,7 +327,38 @@ roadmap — not the syllabus.
 
 ## Running the code
 
-Every file is self-contained C#, no project needed (.NET 10):
+### Setting up a new machine
+
+Every file is a single self-contained C# program with no `.csproj` or `.sln`. That needs
+**.NET 10 or later**, which added running a lone `.cs` file directly.
+
+| Install | Why | How (Windows) |
+| --- | --- | --- |
+| **.NET 10 SDK** (x64) | `dotnet run File.cs`. The SDK is required; a runtime alone can't build | `winget install Microsoft.DotNet.SDK.10` |
+| **VS Code** | editor | [code.visualstudio.com](https://code.visualstudio.com) |
+| **C# extension** (`ms-dotnettools.csharp`) | the debugger: F5, breakpoints, stepping | `code --install-extension ms-dotnettools.csharp` |
+
+On macOS/Linux, get the SDK from [dot.net](https://dot.net) or your package manager;
+the rest is the same.
+
+**Don't install C# Dev Kit.** VS Code will suggest it. It takes over F5 with its own
+project-based launcher, which ignores `.vscode/launch.json`, drops the section argument,
+and made stepping hang here. The plain C# extension is all you need.
+
+After installing, **fully quit and reopen VS Code** (not just *Reload Window*) so it
+picks up the new PATH. Then check:
+
+```bash
+dotnet --version        # 10.x or later
+```
+
+**To debug:** open any `.cs` file, press **F5**, pick a section (`all` / `memory` /
+`ops` / `complexity`). Breakpoints and F10/F11 work anywhere in the file. The config in
+[.vscode/](.vscode/) works on whichever file is open, so it covers every file in the
+repo. Keep the `.cs` tab focused when you press F5; if `launch.json` is the active tab
+it will try to debug that.
+
+### From the terminal
 
 ```bash
 cd DataStructures/01-Arrays

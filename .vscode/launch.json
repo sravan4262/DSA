@@ -1,0 +1,49 @@
+{
+  // F5 debugs whichever .cs file is open in the editor. Nothing here names a
+  // specific file or project — ${file} resolves to the active editor, so the
+  // same config works for Arrays.cs, LinkedLists.cs, Stacks.cs and the rest.
+  //
+  // ONE GOTCHA: ${file} is the ACTIVE editor tab. If launch.json itself is
+  // focused when you press F5, it will try to debug launch.json. Click back
+  // into the .cs file first.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // The usual one. Prompts for a section, then stops on your breakpoints.
+      "name": "Debug current C# file",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build current C# file",
+      "program": "${workspaceFolder}/.artifacts/bin/debug/${fileBasenameNoExtension}.dll",
+      "args": ["${input:mode}"],
+      "cwd": "${fileDirname}",
+      // integratedTerminal keeps the box-drawing characters in the diagrams
+      // rendering correctly; the Debug Console mangles some of them.
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      // Same thing, but breaks on the very first line before anything runs.
+      // Useful when you want to step through the top-level statements at the
+      // head of the file rather than jump straight to a breakpoint.
+      "name": "Debug current C# file (stop at entry)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build current C# file",
+      "program": "${workspaceFolder}/.artifacts/bin/debug/${fileBasenameNoExtension}.dll",
+      "args": ["${input:mode}"],
+      "cwd": "${fileDirname}",
+      "console": "integratedTerminal",
+      "stopAtEntry": true
+    }
+  ],
+  "inputs": [
+    {
+      "id": "mode",
+      "type": "pickString",
+      "description": "Which section to run?",
+      "options": ["all", "memory", "ops", "complexity"],
+      "default": "all"
+    }
+  ]
+}

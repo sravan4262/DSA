@@ -1,6 +1,13 @@
 bin/
 obj/
+.artifacts/
 .vs/
-.vscode/
 *.user
 TestResults/
+
+# .vscode is ignored except the run/debug config. Those two files ARE the
+# setup for debugging a bare .cs file with no project or solution, so they
+# belong in the repo.
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
