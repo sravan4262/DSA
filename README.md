@@ -107,6 +107,10 @@ instead of memorised — and you can derive it for a structure you have never se
 Start with [the memory model](DataStructures/MEMORY-MODEL.md) — stack vs heap, and how
 many bytes anything costs.
 
+For revision, [DS in a Nutshell](DataStructures/DS-IN-A-NUTSHELL.md) is all eleven
+structures on one page each — operations, costs, trade-offs and when each one loses to
+another — plus the Big-O and memory grids side by side.
+
 Done with a structure when you can answer, cold: *where does it live, what does one
 element cost in bytes, and which operation is expensive because of that?*
 
