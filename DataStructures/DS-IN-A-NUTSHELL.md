@@ -55,6 +55,28 @@ STACK              HEAP
   an address       └──── 24 B of header ────┘└─── the data, 16 B ───┘
 ```
 
+**Values inline vs references out-of-line** — the same `T[]`, two completely different walks
+
+```
+int[4]     [ 10 ][ 20 ][ 30 ][ 40 ]      values live INSIDE the array
+                                          one cache line = 16 ints, all free
+
+string[4]  [ ptr ][ ptr ][ ptr ][ ptr ]   only ADDRESSES live inside
+              │      │      │      │      each string is a separate heap object,
+              ▼      ▼      ▼      ▼      scattered wherever the GC put it
+           "ann"  "bob"  "cy"  "dee"
+```
+
+| | `int[]` (value type) | `string[]` (reference type) |
+| --- | --- | --- |
+| A slot holds | the value, **4 B** | an address, **8 B** |
+| Objects | **1** | 1 + n |
+| Walking it | one straight run — the prefetcher wins | one hop **per element** — pointer chasing |
+| GC | skipped — no references inside | must scan every slot |
+
+The array of pointers is still contiguous; **what it points at is not**. That's why an
+`int[]` and a `string[]` share identical Big-O and wildly different wall-clock cost.
+
 **The rule**
 
 | | |
@@ -109,6 +131,8 @@ nums[2] = 30;                // address = start + 2*4  → one instruction
 | | |
 | --- | --- |
 | Type | `int[]`, `T[]`, `int[,]` |
+| Gotcha | `int[,]` is **rectangular** — one object, row-major, `base + (r*cols + c)*4`. `int[][]` is **jagged** — 1 + n objects, a pointer hop per row. Both look 2D |
+| Gotcha | `int[,]` has a **32 B header** (a length *per dimension*), and the JIT optimises it *worse* than `int[]` — hot code flattens to `int[r*cols + c]` by hand |
 | Gotcha | `Array.Resize` doesn't resize — it allocates a new array and copies |
 | Gotcha | arrays ≥ **85,000 bytes** (~21,250 ints) go on the Large Object Heap, which isn't compacted |
 | Gotcha | bounds are checked on every access (the JIT often elides it in `for` loops) |
@@ -278,6 +302,9 @@ insert 15 between 10 and 20:
 | --- | --- |
 | Type | `LinkedList<T>` — doubly linked, 40 B per node |
 | Gotcha | O(1) insert only if you hold the `LinkedListNode<T>`. Finding it is O(n) |
+| Technique | **fast + slow pointers** (slow moves 1, fast moves 2) — detects a cycle when they meet, and lands slow on the **middle** when fast hits the end. O(1) space |
+| Technique | a **dummy head** node removes every "is this the first node?" special case from insert and delete |
+| Technique | reversing is three pointers — `prev`, `curr`, `next` — and one loop. The single most-asked linked-list question |
 | Gotcha | it is the standard deque substitute, since .NET has no `Deque<T>` |
 | Reality | rarely the right answer — its O(1) insert is usually beaten by an array's cache locality |
 
@@ -358,6 +385,7 @@ Peek              →  returns 20
 | Type | `Stack<T>` — array-backed, doubling |
 | Gotcha | `Pop()`/`Peek()` **throw** on empty — use `TryPop`/`TryPeek` |
 | Gotcha | iteration order is top-to-bottom, but don't design around it |
+| Technique | **monotonic stack** — keep it increasing (or decreasing) by popping before you push. Each element is pushed and popped once, so scanning for "next greater / previous smaller" is **O(n), not O(n²)** |
 
 **Say this:** *"A stack is an array with the O(n) operations removed from the API. You only ever touch the end, which is the one place an array is cheap — so everything is O(1)."*
 
@@ -477,7 +505,8 @@ Deep dive: [04-Queues/Memory.md](04-Queues/Memory.md) · [↑ Contents](#content
 
 | Op | Big-O | Case | Why |
 | --- | --- | --- | --- |
-| `Add` | O(1) | **average** | hash, then append to one short chain |
+| `Add` | O(1) | **average + amortised** | hash, then append to one short chain |
+| Grow (rehash) | **O(n)** | on resize | when the table fills, the bucket array grows and **every key is rehashed** — `% bucketCount` changed, so every slot moved |
 | `ContainsKey` / lookup | **O(1)** | **average** | hash → bucket → walk a ~1-long chain |
 | `Remove` | **O(1)** | **average** | unlink from the chain — **nothing shifts**, positions are absolute |
 | any of the above | **O(n)** | **worst** | if every key collides it degenerates into one linked list |
@@ -527,6 +556,9 @@ same in an array:                                  1,000,000 comparisons
 | Gotcha | `dict[k]` **throws** if missing · `Add` **throws** on a duplicate key · `dict[k] = v` overwrites silently |
 | Gotcha | use `TryGetValue` — `ContainsKey` + indexer is **two** lookups |
 | Gotcha | `HashSet.Add` returns `bool` — "check and mark" in one lookup |
+| Gotcha | a custom class as a key **must override `GetHashCode` *and* `Equals`** — the default is reference identity, so an equal-looking key won't find its entry. `record` does both for you |
+| Gotcha | **never mutate a key after inserting it** — the hash changes, the entry stays in the old bucket, and it's unreachable forever |
+| Gotcha | `new Dictionary<K,V>(capacity)` skips the rehashes, exactly like `List<T>` |
 | Gotcha | **never rely on iteration order**, and never persist a hash code (it's randomised per process) |
 
 **Say this:** *"Lookup is O(1) average because the key computes its own slot. It's O(n) worst case if everything collides — and it can never give you sorted order, because scattering keys is the mechanism, not a side effect."*
@@ -568,6 +600,23 @@ Deep dive: [05-HashTables/Memory.md](05-HashTables/Memory.md) · [↑ Contents](
 | Min / Max | O(log n) | balanced | walk left / right until you can't |
 | **Range query** | **O(log n + k)** | balanced | descend to `lo`, walk in-order to `hi` |
 | In-order walk | O(n) time, **O(h) space** | — | sorted output free; the recursion stack is *not* O(1) |
+
+**The four traversals** — same tree, four orders, and each one exists for a reason
+
+```
+        50            in-order    left, NODE, right   20 30 40 50 60 70 80  ← SORTED
+    ┌───┴───┐         pre-order   NODE, left, right   50 30 20 40 70 60 80
+   30       70        post-order  left, right, NODE   20 40 30 60 80 70 50
+  ┌─┴─┐   ┌─┴─┐       level-order a QUEUE, not recursion 50 30 70 20 40 60 80
+ 20   40 60   80
+```
+
+| Order | Visits the node | Use it for |
+| --- | --- | --- |
+| **In-order** | between the subtrees | **sorted output**, validating a BST, kth smallest |
+| **Pre-order** | first | **copying/serialising** a tree — the root arrives before its children |
+| **Post-order** | last | **deleting/freeing**, or any answer built *from* the children up (height, sum) |
+| **Level-order** | row by row | **BFS** — uses a `Queue`, not recursion; shortest path, "by level" questions |
 
 **Example**
 
@@ -611,6 +660,7 @@ find 40:  40 < 50 → left  (discard 70,60,80)
 | Types | `SortedDictionary<K,V>` · `SortedSet<T>` — **red-black trees**, so O(log n) is guaranteed |
 | Gotcha | `SortedList<K,V>` is **not a tree** — two sorted arrays. O(log n) read, **O(n) insert** |
 | Gotcha | **there is no plain BST in .NET**, precisely because of degeneration |
+| Gotcha | self-balancing is the *same* structure with a repair step after insert/delete — **AVL** rebalances harder (faster reads), **red-black** rebalances less (faster writes). Both guarantee O(log n) |
 | Gotcha | recursive traversal is O(h) stack space — a degenerate tree overflows at ~16,000 nodes |
 
 **Say this:** *"Every operation walks one root-to-leaf path, so the cost is the height — O(log n) balanced, O(n) degenerate. Sorted input produces the worst possible tree, which is why everyone ships a red-black tree instead."*
@@ -739,6 +789,7 @@ Deep dive: [07-Heaps/Memory.md](07-Heaps/Memory.md) · [↑ Contents](#contents)
 | `Search(word)` | **O(L)** | worst | walk the path, then check `isEndOfWord` |
 | `StartsWith(prefix)` | **O(L)** | worst | walk the path — **the thing nothing else can do** |
 | All words with a prefix | O(L + output) | worst | walk to the node, then collect the subtree |
+| `Delete(word)` | **O(L)** | worst | clear `isEndOfWord`, then prune **upward only while a node has no children and isn't itself a word** — deleting `car` must not break `cart` |
 | Space | O(total characters) | — | shared prefixes are stored **once** |
 
 **Example**
@@ -806,6 +857,18 @@ Deep dive: [08-Tries/Memory.md](08-Tries/Memory.md) · [↑ Contents](#contents)
                    V² always                  V + 2E
 ```
 
+**Directed or undirected** — ask this *first*; it changes the code and the algorithm
+
+| | Undirected `0 ─── 1` | Directed `0 ──→ 1` |
+| --- | --- | --- |
+| `AddEdge` sets | **two** cells / both lists | **one** cell / one list |
+| Matrix shape | **symmetric** across the diagonal | asymmetric — `[a,b]` and `[b,a]` are independent |
+| Entries stored | **2E** | **E** |
+| Degree | one number | **out** = row · **in** = column |
+| `a` reaches `b` ⇒ `b` reaches `a` | **yes** | **no** — two separate questions |
+| Cycle detection | skip the node you **came from** (`parent`) | track the **current path** — 3 states, not just "visited" |
+| Weighted? | store the weight in the cell / list entry instead of `1` | same |
+
 **The rule**
 
 | | |
@@ -865,6 +928,9 @@ shortest path in an UNWEIGHTED graph falls straight out of this
 | | |
 | --- | --- |
 | Type | **none** — build it. `List<int>[]` or `Dictionary<T, List<T>>` |
+| Gotcha | ask **"is it directed?"** before writing a line — it changes `AddEdge` and changes cycle detection entirely |
+| Gotcha | an adjacency list is **V+1 heap objects** (`List<int>[]` is **2V+1**) — a pointer hop per row, and below ~V=15 it's *bigger* than a matrix |
+| Gotcha | `int[,]` is one contiguous object; `int[][]` is a **jagged** array of references. Both look 2D, only one is |
 | Gotcha | **always** track visited — a cycle without it is an infinite loop |
 | Gotcha | BFS = `Queue` (shortest path) · DFS = `Stack` or recursion (cycles, topological order) |
 | Gotcha | weighted shortest path needs **Dijkstra** (a heap), not plain BFS |
@@ -1190,6 +1256,11 @@ O(V+E) into O(V·E).
 | Max-heap for "k largest" | you can't find the weakest champion to evict | use a **min**-heap of size k |
 | Recursive DFS on a deep graph | uncatchable `StackOverflowException` | explicit `Stack<T>` |
 | No visited set in graph traversal | infinite loop on any cycle | `HashSet` — and use `Add`'s return value |
+| `AddEdge` sets **one** cell on an *undirected* graph | half the edges silently vanish; BFS finds the wrong answer | undirected sets **both** directions; directed sets one |
+| Using the "skip the parent" cycle trick on a **directed** graph | misses real cycles | directed needs 3 states — unvisited / **in-progress** / done |
+| Marking visited on **pop** instead of on discovery | the same node is queued 3–4× before it's processed | mark the moment you **enqueue/push** it |
+| Validating a BST by comparing each node to its parent only | `[50, 30, 70, null, null, 20]` passes but is invalid | pass a **(min, max) range** down the recursion |
+| Mutating a `Dictionary` key after inserting it | the entry is stranded in its old bucket — unreachable | keys must be immutable; override `GetHashCode` **and** `Equals` |
 | Union-Find without path compression | O(n) instead of ~O(1) | path compression **and** union by rank |
 
 [↑ Contents](#contents)
