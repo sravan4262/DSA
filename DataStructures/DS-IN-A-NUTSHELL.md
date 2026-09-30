@@ -27,7 +27,9 @@ Foundation for all of it: [MEMORY-MODEL.md](MEMORY-MODEL.md).
 | Section | What it answers |
 | --- | --- |
 | [Big-O grid](#big-o-grid) | all 11, side by side |
-| [Memory grid](#memory-grid) | what each costs per element |
+| [Memory grid](#memory-grid) | what each costs per element — **with the arithmetic** |
+| [Index vs pointer](#index-vs-pointer) | why the fastest structures store neither |
+| [Cause and consequence](#cause-and-consequence) | the *reason*, not the result — where follow-ups live |
 | [Decision table](#decision-table) | "I need X → use Y" |
 | [Everything is an array](#everything-is-an-array) | why most structures are the same thing underneath |
 | [Restriction buys speed](#restriction-buys-speed) | why Stack and Queue are all-O(1) |
@@ -981,11 +983,44 @@ Deep dive: [09-Graphs/Memory.md](09-Graphs/Memory.md) · [↑ Contents](#content
 
 **Example**
 
+Build it from scratch — 5 elements, everyone their own root:
+
+| Step | `parent` | Groups | What happened |
+| --- | --- | --- | --- |
+| start | `[0, 1, 2, 3, 4]` | **5** | `parent[i] == i` everywhere |
+| `Union(0,1)` | `[0, 0, 2, 3, 4]` ← slot 1 | **4** | roots 0 ≠ 1 → `parent[1] = 0` |
+| `Union(2,3)` | `[0, 0, 2, 2, 4]` ← slot 3 | **3** | roots 2 ≠ 3 → `parent[3] = 2` |
+| `Union(1,3)` | `[0, 0, 0, 2, 4]` ← slot 2 | **2** | `Find(1)=0`, `Find(3)=2` → **roots** linked, `parent[2] = 0` |
+
 ```
-Union(1,2)  → 2's root now points at 1's root
-Connected(0,2)? Find(0)=0, Find(2)=0 → yes
-Connected(0,5)? Find(0)=0, Find(5)=5 → no
+        0                4          {0,1,2,3}  and  {4}
+      ╱   ╲
+     1     2             note Union(1,3) linked roots 0 and 2 —
+           │             NOT elements 1 and 3
+           3
 ```
+
+**`Connected(3, 1)`?** `Find(3)`: 3→2→0 = **0**. `Find(1)`: 1→0 = **0**. Equal → ✅ yes.
+
+And that `Find(3)` **rewrote the array as it read it** — path compression points 3 straight
+at the root: `[0, 0, 0, 0, 4]`. The next `Find(3)` is one hop.
+
+**Counting groups** — the most common interview use:
+
+```csharp
+int groups = n;                      // everyone alone
+foreach (var (a, b) in edges)
+    if (Union(a, b)) groups--;       // Union returns false if already together
+```
+
+`Union` returning **false** *is* the cycle check — no separate algorithm needed.
+
+**Why each optimisation is not optional**
+
+| | Does | Without it |
+| --- | --- | --- |
+| **Union by rank** | hangs the **shorter** tree under the taller | every union adds a level → a **chain** → `Find` is O(n) |
+| **Path compression** | after `Find`, points **every node on the path** at the root | you re-walk the same long path every time |
 
 α(n) is the inverse Ackermann function — **below 5 for any n you will ever have**. Effectively constant.
 
@@ -1058,17 +1093,110 @@ Every cell names its case. `*` = amortised.
 
 ## Memory grid
 
-| Structure | Bytes per `int` | 1M ints | Objects allocated | Cache |
-| --- | --- | --- | --- | --- |
-| Array · Stack · Queue · **Heap** | **4 B** | **4 MB** | **1** | ✅ excellent |
-| Union-Find | 8 B | 8 MB | 2 | ✅ excellent |
-| Dynamic Array | 4 B + spare | ~4–8 MB | 2 | ✅ excellent |
-| Linked list (singly) | 32 B | 32 MB | 1,000,000 | ❌ poor |
-| Linked list (doubly) · BST node | 40 B | 40 MB | 1,000,000 | ❌ poor |
-| Hash entry | ~40 B + key | ~40 MB | many | ❌ poor |
-| **Trie node** | **~264 B** | — | many | ❌ poor |
+### The five numbers everything is built from
 
-Wrapper objects (the class that holds the buffer): `List`/`Stack`/`Heap` 48 B · `Queue` 56 B · `Trees` 48 B.
+| | Bytes |
+| --- | --- |
+| an **`int`** (also `float`; `bool` and `byte` are 1 in an array) | **4** |
+| a **reference** — any `class`, on 64-bit | **8** |
+| **object header** — sync block 8 + method table 8 | **16** |
+| **array header** — object header + length | **24** |
+| multi-dim array header (`int[,]`) — a length *per dimension* | 32 |
+
+**Every cost below is just those added up.** The header is the part that gets forgotten:
+a node is never "4 bytes plus a pointer" — it is an *object*, so it starts at 16 before
+it stores anything.
+
+### Per element
+
+| Structure | The arithmetic | Per `int` | 1M ints | Objects | Cache |
+| --- | --- | --- | --- | --- | --- |
+| Array · Stack · Queue · **Heap** | `4` — values sit **inside** the array | **4 B** | **4 MB** | **1** | ✅ excellent |
+| Dynamic Array | `4` + unused capacity | 4 B + spare | ~4–8 MB | 2 | ✅ excellent |
+| Union-Find | `4 parent + 4 rank` | **8 B** | 8 MB | **2** | ✅ excellent |
+| Hash entry (.NET struct) | `4 hash + 4 next + 8 key + 4 value` → 24, **+ 4 B bucket slot + ~2× slack** | ~40 B | ~40 MB | **2** + key objects | ❌ 3–4 misses |
+| Linked list (singly) | `16 hdr + 4 value + 8 next + 4 pad` | **32 B** | 32 MB | **1,000,000** | ❌ poor |
+| Linked list (doubly) · **BST node** | `16 hdr + 4 value + 8 + 8 + 4 pad` | **40 B** | 40 MB | **1,000,000** | ❌ poor |
+| **Trie node** | `32 node + (24 + 26 × 8) child array` | **~264 B** | — | many | ❌ poor |
+
+### Reference arrays cost more than they look
+
+| | Slot holds | Objects | Walking it |
+| --- | --- | --- | --- |
+| `int[n]` | the **value**, 4 B | **1** | one straight run ✅ |
+| `string[n]` | an **address**, 8 B | **1 + n** | a pointer hop per element ❌ |
+
+Same `T[]`, same Big-O, wildly different wall-clock cost — and the GC skips an `int[]`
+entirely while it must scan every slot of a `string[]`.
+
+### Wrappers
+
+The class that holds the buffer, paid **once**: `List`/`Stack`/`Heap` **48 B** ·
+`Queue` **56 B**. Always **2 heap objects**, never 1 — wrapper plus array.
+
+[↑ Contents](#contents)
+
+## Index vs pointer
+
+The single idea behind the fastest structures here. **An index is a pointer that costs
+half as much and cannot leave the array.**
+
+| | Pointer (reference) | Index (`int`) |
+| --- | --- | --- |
+| Size | **8 B** | **4 B** |
+| Can point | anywhere on the heap | **only inside one array** |
+| Element needs | its own object + **16 B header** | nothing — it's a slot |
+| Cache | scattered, dependent loads | **stays in one contiguous block** |
+| GC | one traced object per element | **nothing to trace** |
+
+Four structures store their entire shape as indices, with **no node type at all**:
+
+| Structure | The "pointer" | Means |
+| --- | --- | --- |
+| **Heap** | `2i+1`, `2i+2` | children — not even stored, **computed** |
+| **Union-Find** | `parent[i]` | the index of i's parent |
+| **.NET `Dictionary`** | `_buckets[b]`, `entry.next` | where a chain starts / continues |
+| **CSR graph** | `offsets[v]` | where v's neighbours begin in one flat array |
+
+Compare the same shapes built with references:
+
+| | As objects | As indices |
+| --- | --- | --- |
+| A tree of n ints | **40 B** × n, n objects | **4 B** × n, **1** object (heap) |
+| A forest of n ints | 40 B × n | **8 B** × n, **2** objects (union-find) |
+| A hash chain | 40 B entry objects | **24 B** structs in one array |
+
+> **Say "index", not "pointer", for these.** If you call `parent[i]` a pointer you've lost
+> the reason the structure is fast.
+
+[↑ Contents](#contents)
+
+## Cause and consequence
+
+Nearly every structure has a fact people reach for that is actually the **result**, not
+the **reason**. Interviewers probe exactly here, because the cause is the part you can
+only state if you understand it.
+
+| Question | The tempting answer *(a consequence)* | The actual cause |
+| --- | --- | --- |
+| Why is array indexing O(1)? | "you can jump straight to it" | **same-width elements, contiguous** → the address is arithmetic |
+| Why is array insert O(n)? | "it's fixed size" | **no gaps allowed** → room must be physically made |
+| Why does a BST degenerate? | "it becomes unbalanced" | **sorted input** — every insert goes the same way |
+| Why is a **heap** never degenerate? | "the min is at index 0" | **completeness** — no gaps ⇒ n nodes always fit in log n levels |
+| Why is heap insert O(log n)? | "it's a tree" | the invariant is **local** (parent only) → a repair touches **one root-to-leaf path** |
+| Why is `Heapify` O(n)? | "it does them all at once" | **half the nodes are leaves** and sift down **zero** levels |
+| Why can't a hash table sort? | "it's unordered" | **scattering is the mechanism** — short chains *require* similar keys landing far apart |
+| Why is hash lookup O(1)? | "it stores the hash" | the hash is **recomputed** and *is* the address — nothing is searched |
+| Why does `Dequeue` beat `RemoveAt(0)`? | "it's the first element" | **an index moves instead of the data** |
+| Why does a Queue need `count`? | "to know when to resize" | **`head == tail` is ambiguous** — empty *or* full |
+| Why are Stack/Queue all-O(1)? | "they're simple" | **every operation they removed was an O(n) one** |
+| Why is a linked list slow? | "it's O(n)" | **dependent loads** — the prefetcher can't guess the next address |
+| Why is a trie O(L)? | "words are short" | you walk **only your own key's path** — the other n−1 keys are never touched |
+| Why does union-find need compression? | "to be fast" | without it trees grow into **chains** → `Find` is O(n) |
+| Why can't union-find list a group? | "it only stores parents" | **arrows point up only** — from a root you cannot reach your children |
+
+> **Pattern:** the consequence is what the structure *gives you*. The cause is what the
+> **bytes** make unavoidable. Always answer with the layout.
 
 [↑ Contents](#contents)
 
@@ -1198,10 +1326,34 @@ Three different claims. Saying the wrong one is exactly what gets probed.
 | **Average case** | typical, but a bad case exists | hash lookup — O(1) average, **O(n)** if all keys collide |
 | **Amortised** | any single call can be slow; n calls average out | `Add`/`Push`/`Enqueue` — O(1) amortised, O(n) on the resize |
 
+**Amortised, in one image:** a 10-coffee card for £20. Coffee #1 costs £20, #2–10 cost
+nothing. Every coffee is "£2 amortised" — and one of them genuinely cost £20.
+
+**Average vs amortised is the subtle one.** A hash lookup can be slow *every single time*
+if your keys are bad. A `List.Add` can only be slow **occasionally** — doubling makes the
+expensive calls exponentially rarer.
+
+### Which label goes with which operation
+
+Say the label out loud with the complexity. This is the table to have cold:
+
+| Operation | Claim | Why |
+| --- | --- | --- |
+| `arr[i]`, `Peek`, `Count` | **worst** | pure arithmetic, no hidden path |
+| **`Pop`, `Dequeue`, `RemoveAt(count-1)`** | **worst** | **removal never reallocates** |
+| **`Add`, `Push`, `Enqueue`** | **amortised** | the resize hides here — that one call is O(n) |
+| Dictionary / HashSet `Add` | **average *and* amortised** | collisions *and* rehashing, two separate risks |
+| Dictionary / HashSet lookup, `Remove` | **average** | O(n) if every key collides |
+| Heap `Push` / `Pop` | O(log n), **`Push` amortised** | sift is ≤ height; `Push` can also resize |
+| BST search / insert / delete | **O(h)** — say *h*, not log n | log n only if balanced; **O(n) on sorted input** |
+| `Find` / `Union` | **amortised α(n)** | one unlucky `Find` still walks several levels |
+
 Two more worth naming:
 
 - **Insertion-order dependent** — a BST is O(log n) on random input, **O(n) on sorted input**
-- **Space including the call stack** — a recursive traversal is O(h) space, not O(1)
+- **Space including the call stack** — a recursive traversal is O(h) space, **not O(1)**, and
+  rewriting it with an explicit `Stack<T>` is *still* O(h) — just on the heap instead of the
+  1 MB thread stack
 
 [↑ Contents](#contents)
 
