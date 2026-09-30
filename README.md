@@ -93,21 +93,21 @@ instead of memorised — and you can derive it for a structure you have never se
 
 | Structure | Memory guide | Implementation |
 | --- | --- | --- |
-| Arrays | [Memory.md](DataStructures/01-Arrays/Memory.md) | [Arrays.cs](DataStructures/01-Arrays/Arrays.cs) |
-| Linked lists | [Memory.md](DataStructures/02-LinkedLists/Memory.md) | [LinkedLists.cs](DataStructures/02-LinkedLists/LinkedLists.cs) |
-| Stacks | [Memory.md](DataStructures/03-Stacks/Memory.md) | [Stacks.cs](DataStructures/03-Stacks/Stacks.cs) |
-| Queues | [Memory.md](DataStructures/04-Queues/Memory.md) | [Queues.cs](DataStructures/04-Queues/Queues.cs) |
-| Hash tables | [Memory.md](DataStructures/05-HashTables/Memory.md) | [HashTables.cs](DataStructures/05-HashTables/HashTables.cs) |
-| Trees & BSTs | [Memory.md](DataStructures/06-Trees/Memory.md) | [Trees.cs](DataStructures/06-Trees/Trees.cs) |
-| Heaps | [Memory.md](DataStructures/07-Heaps/Memory.md) | [Heaps.cs](DataStructures/07-Heaps/Heaps.cs) |
-| Tries | [Memory.md](DataStructures/08-Tries/Memory.md) | [Tries.cs](DataStructures/08-Tries/Tries.cs) |
-| Graphs | [Memory.md](DataStructures/09-Graphs/Memory.md) | [Graphs.cs](DataStructures/09-Graphs/Graphs.cs) |
-| Union-Find | [Memory.md](DataStructures/10-UnionFind/Memory.md) | [UnionFind.cs](DataStructures/10-UnionFind/UnionFind.cs) |
+| Arrays | [Memory.md](01-DataStructures/01-Arrays/Memory.md) | [Arrays.cs](01-DataStructures/01-Arrays/Arrays.cs) |
+| Linked lists | [Memory.md](01-DataStructures/02-LinkedLists/Memory.md) | [LinkedLists.cs](01-DataStructures/02-LinkedLists/LinkedLists.cs) |
+| Stacks | [Memory.md](01-DataStructures/03-Stacks/Memory.md) | [Stacks.cs](01-DataStructures/03-Stacks/Stacks.cs) |
+| Queues | [Memory.md](01-DataStructures/04-Queues/Memory.md) | [Queues.cs](01-DataStructures/04-Queues/Queues.cs) |
+| Hash tables | [Memory.md](01-DataStructures/05-HashTables/Memory.md) | [HashTables.cs](01-DataStructures/05-HashTables/HashTables.cs) |
+| Trees & BSTs | [Memory.md](01-DataStructures/06-Trees/Memory.md) | [Trees.cs](01-DataStructures/06-Trees/Trees.cs) |
+| Heaps | [Memory.md](01-DataStructures/07-Heaps/Memory.md) | [Heaps.cs](01-DataStructures/07-Heaps/Heaps.cs) |
+| Tries | [Memory.md](01-DataStructures/08-Tries/Memory.md) | [Tries.cs](01-DataStructures/08-Tries/Tries.cs) |
+| Graphs | [Memory.md](01-DataStructures/09-Graphs/Memory.md) | [Graphs.cs](01-DataStructures/09-Graphs/Graphs.cs) |
+| Union-Find | [Memory.md](01-DataStructures/10-UnionFind/Memory.md) | [UnionFind.cs](01-DataStructures/10-UnionFind/UnionFind.cs) |
 
-Start with [the memory model](DataStructures/MEMORY-MODEL.md) — stack vs heap, and how
+Start with [the memory model](01-DataStructures/MEMORY-MODEL.md) — stack vs heap, and how
 many bytes anything costs.
 
-For revision, [DS in a Nutshell](DataStructures/DS-IN-A-NUTSHELL.md) is all eleven
+For revision, [DS in a Nutshell](01-DataStructures/DS-IN-A-NUTSHELL.md) is all eleven
 structures on one page each — operations, costs, trade-offs and when each one loses to
 another — plus the Big-O and memory grids side by side.
 
@@ -117,7 +117,7 @@ element cost in bytes, and which operation is expensive because of that?*
 ### Step 2 — for every algorithm, the same loop
 
 Not "solve some problems tagged with it". Copy
-[Algorithms/TEMPLATE.md](Algorithms/TEMPLATE.md) and fill it:
+[02-Algorithms/TEMPLATE.md](02-Algorithms/TEMPLATE.md) and fill it:
 
 1. **Brute force first.** Write it, measure it, name the work it repeats. Never skip this
    — the optimisation is meaningless without the thing it beats, and "what's the naive
@@ -135,7 +135,7 @@ Not "solve some problems tagged with it". Copy
    brute force *and* optimised so the comparison happens every time.
 
 For every data structure, do the same with
-[DataStructures/TEMPLATE.md](DataStructures/TEMPLATE.md): why was it invented, what
+[01-DataStructures/TEMPLATE.md](01-DataStructures/TEMPLATE.md): why was it invented, what
 problem does it solve, strengths, weaknesses, when *not* to use it, the runtime of every
 operation with a **why** column, and how it works internally.
 
@@ -146,14 +146,14 @@ A node is finished when its algorithms come out cold a week later.
 ## Layout
 
 ```
-DataStructures/            what it is, how it works
+01-DataStructures/            what it is, how it works
 ├── TEMPLATE.md
 ├── MEMORY-MODEL.md        stack vs heap, and what a byte costs
 ├── TEMPLATE.md
 ├── 01-Arrays/  Memory.md · Arrays.cs
 └── 02-LinkedLists/ …
 
-Algorithms/                what you can do with it
+02-Algorithms/                what you can do with it
 ├── TEMPLATE.md
 └── 04-TwoPointers/
     ├── TwoPointers.md     the guide
@@ -365,7 +365,7 @@ it will try to debug that.
 ### From the terminal
 
 ```bash
-cd DataStructures/01-Arrays
+cd 01-DataStructures/01-Arrays
 dotnet run Arrays.cs                  # everything
 dotnet run Arrays.cs -- memory        # how it is stored in memory
 dotnet run Arrays.cs -- ops           # each operation and what it cost

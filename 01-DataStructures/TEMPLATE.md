@@ -1,7 +1,7 @@
 # <Data structure name>
 
 > Copy this file, fill every section, delete these quote lines. This folder answers
-> *what is it and how does it work* — algorithms that use it live under `Algorithms/`.
+> *what is it and how does it work* — algorithms that use it live under `02-Algorithms/`.
 
 ## 1. Why was it invented?
 
