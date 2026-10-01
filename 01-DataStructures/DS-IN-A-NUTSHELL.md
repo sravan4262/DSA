@@ -549,6 +549,55 @@ same in an array:                                  1,000,000 comparisons
 | key → value by **exact** key | n is tiny — just scan the array |
 | turning an O(n²) nested loop into O(n) | you need min/max — that's O(n) here |
 
+**The two .NET types, side by side** — identical machinery, one field apart
+
+```csharp
+class Dictionary<TKey,TValue>        class HashSet<T>
+  int[]   _buckets;                    int[]   _buckets;      ← same
+  Entry[] _entries;                    Entry[] _entries;      ← same
+
+  struct Entry {                       struct Entry {
+      uint   hashCode;  // 4 B             int HashCode;  // 4 B
+      int    next;      // 4 B index       int Next;      // 4 B index
+      TKey   key;       // 8 B             T   Value;     // 8 B
+      TValue value;     // 4 B         }   ← no value field
+  }
+```
+
+| | `Dictionary<K,V>` | `HashSet<T>` |
+| --- | --- | --- |
+| Entry size (`string` key, `int` value) | 20 → padded **24 B** | **16 B** |
+| Difference | | exactly **`sizeof(TValue)`** |
+| Buckets, 1-based encoding, index chains, free list on remove, prime sizing | ✅ | ✅ **identical** |
+
+**Which one:** *do I need to store something alongside the key?* Yes → `Dictionary`. No, just
+"is it there?" → `HashSet`.
+
+**Operations — and the four pairs to pick correctly**
+
+| Operation | Big-O | Case | On failure |
+| --- | --- | --- | --- |
+| `dict[key]` get | O(1) | average | **throws** `KeyNotFoundException` |
+| `dict[key] = v` | O(1) | avg + amortised | never fails — **adds or overwrites** |
+| `Add(key, v)` | O(1) | avg + amortised | **throws** on duplicate |
+| **`TryGetValue` / `TryAdd`** | O(1) | average | returns **`false`** ✅ |
+| `Remove(key)` | O(1) | average | returns `false` |
+| `Count` | **O(1)** | **worst** | a stored field |
+| `Clear()` | O(n) | worst | **keeps the buffers** |
+| **`ContainsValue(v)`** | **O(n)** | worst | only *keys* are hashed |
+| **`HashSet.Add(x)`** | O(1) | avg + amortised | returns **`bool`** — check-and-mark in **one** lookup |
+
+| Instead of | Use | Why |
+| --- | --- | --- |
+| `ContainsKey(k)` then `dict[k]` | **`TryGetValue`** | two hash lookups → one |
+| `!ContainsKey(k)` then `Add` | **`TryAdd`** | two → one |
+| `Contains(x)` then `Add(x)` | **`Add(x)`'s return value** | two → one |
+| `Add` where duplicates possible | `dict[k] = v` | `Add` throws; the indexer overwrites |
+
+**`Remove` doesn't leave a hole.** The slot joins a **free list** threaded through the `next`
+field (one field, two jobs), and the next `Add` reuses it — which is precisely why
+insertion order breaks and must never be relied on.
+
 **.NET and gotchas**
 
 | | |
@@ -655,11 +704,44 @@ find 40:  40 < 50 → left  (discard 70,60,80)
 | ranges: "all keys between a and b" | you only need the min/max → `PriorityQueue` |
 | you need min **and** max **and** ordering | |
 
+**.NET's three ordered collections** — pick by what the key maps to, and watch the third
+
+| | Structure | Lookup | **Insert** | Holds |
+| --- | --- | --- | --- | --- |
+| **`SortedSet<T>`** | red-black **tree** | O(log n) | **O(log n)** | values only |
+| **`SortedDictionary<K,V>`** | red-black **tree** | O(log n) | **O(log n)** | key → value |
+| ⚠️ **`SortedList<K,V>`** | **two sorted arrays** | O(log n) | **O(n)** ❌ | key → value |
+
+`SortedList` is the trap: the name says list, the behaviour is a sorted array — binary-search
+reads, but **every insert shifts**. Use it only for build-once-then-read-often data, where it
+wins on memory and cache.
+
+**The operations you're paying O(log n) for** — none of these exist on a hash table:
+
+| Operation | Cost | |
+| --- | --- | --- |
+| `Min` / `Max` | **O(log n)** | walk left / right until you can't |
+| **`GetViewBetween(lo, hi)`** | **O(log n + k)** | the range query — a live view, not a copy |
+| in-order iteration | O(n) | **sorted output, free** |
+| `GetEnumerator` after `Add` | — | order is maintained on every write, not sorted on read |
+
+```csharp
+var s = new SortedSet<int> { 10, 20, 30, 40, 50 };
+s.Min;                      // 10          — O(log n)
+s.GetViewBetween(20, 40);   // 20, 30, 40  — O(log n + k)
+```
+
+⚠️ **A `SortedSet<string>` can even fake prefix search** — `GetViewBetween("ca", "ca" +
+char.MaxValue)` returns everything starting with `ca`. O(log n + k) and no trie to write.
+Good enough for a few thousand words; a trie only wins when n is large and you query
+prefixes constantly.
+
 **.NET and gotchas**
 
 | | |
 | --- | --- |
 | Types | `SortedDictionary<K,V>` · `SortedSet<T>` — **red-black trees**, so O(log n) is guaranteed |
+| | ⚠️ They are **trees, not hash tables** — the name misleads. A tree **compares** your key (`IComparable`); a hash table **hashes** it (`GetHashCode` + `Equals`). Different contract entirely |
 | Gotcha | `SortedList<K,V>` is **not a tree** — two sorted arrays. O(log n) read, **O(n) insert** |
 | Gotcha | **there is no plain BST in .NET**, precisely because of degeneration |
 | Gotcha | self-balancing is the *same* structure with a repair step after insert/delete — **AVL** rebalances harder (faster reads), **red-black** rebalances less (faster writes). Both guarantee O(log n) |
