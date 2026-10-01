@@ -1400,7 +1400,41 @@ heap, where you have gigabytes instead of one megabyte. **Iterative is not O(1) 
 
 ## Amortised vs average vs worst
 
-Three different claims. Saying the wrong one is exactly what gets probed.
+### First: complexity and case are two different things
+
+An answer needs **both**. Quoting one without the other is the incomplete answer that
+gets probed.
+
+| | Answers | Values it takes |
+| --- | --- | --- |
+| **Complexity** (the Big-O) | how fast does cost grow as n grows? | O(1) · O(log n) · O(n) · O(n²) |
+| **Case** | *which scenario* is that O describing? | worst · average · amortised |
+
+The same operation has a **different O in each case**, so the O alone is ambiguous:
+
+| Operation | Honest answer | Also true | Incomplete |
+| --- | --- | --- | --- |
+| `List.Add(x)` | **O(1) amortised** | O(n) worst — the resize copy | "O(1)" — hides that a resize exists |
+| `dict["cat"]` | **O(1) average** | O(n) worst — every key collided | "O(1)" — hides collisions |
+| `Stack.Pop()` | **O(1) worst** | *(nothing worse exists)* | — |
+
+**The test for which label applies** — ask *"can this call trigger a resize?"*
+
+| | |
+| --- | --- |
+| Yes → **amortised** | the expensive call is spread over the cheap ones |
+| No, but bad data can hurt → **average** | the bad case is possible *every* call, not occasional |
+| No to both → **worst** | the O is unconditional |
+
+So **searching is never amortised.** No write → no resize → nothing to spread out.
+A search is worst or average, only.
+
+Note `Push` and `Pop` on the *same* `Stack` carry **different labels**. The label tracks
+the operation's relationship to resizing, not the structure it belongs to.
+
+### The three claims
+
+Saying the wrong one is exactly what gets probed.
 
 | Claim | Means | Example |
 | --- | --- | --- |
