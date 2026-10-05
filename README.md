@@ -232,10 +232,10 @@ repo shows real progress.
 - [ ] Manacher
 
 ### 04 · Two Pointers — *needs: 01, 02*
-- [ ] ConvergingPointers
-- [ ] FastSlowPointers
-- [ ] DutchNationalFlag
-- [ ] MergeFromBack
+- [x] ConvergingPointers
+- [x] FastSlowPointers
+- [x] DutchNationalFlag
+- [x] MergeFromBack
 
 ### 05 · Stack — *needs: 01*
 - [ ] MonotonicStack
