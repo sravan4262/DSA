@@ -198,8 +198,8 @@ repo shows real progress.
 - [x] HashMapCounting — frequency, membership, seen-before
 - [x] PrefixSums — prefix and suffix accumulation
 - [x] DifferenceArray — range updates in O(1)
-- [ ] Kadane — maximum subarray
-- [ ] InPlaceWritePointer — compaction without extra space
+- [x] Kadane — maximum subarray
+- [x] InPlaceWritePointer — compaction without extra space
 
 ### 02 · Sorting — *needs: 01*
 - [ ] MergeSort — the one sorting algorithm to know cold
