@@ -211,7 +211,7 @@ repo shows real progress.
 - [x] InPlaceWritePointer — compaction without extra space
 
 ### 02 · Sorting — *needs: 01*
-- [ ] MergeSort — the one sorting algorithm to know cold
+- [x] MergeSort — the one sorting algorithm to know cold
 
 > **Deliberately one, not seven.** MergeSort is the pick because it is the only common
 > sort that is **O(n log n) in the worst case *and* stable**, it is the divide-and-conquer
