@@ -64,17 +64,19 @@ Folder numbers match this order, so the folder listing *is* the syllabus.
 The arrows show the main path. Full prerequisites are on each node below as
 *needs: 02, 04*.
 
-Each node holds a handful of **algorithms** — 93 in total, listed further down. None of
-them are problems. Problems live in each node's `Problems/` folder and are how you drill
-an algorithm once you have built it:
+Each node holds a handful of **algorithms** — 87 in total, listed further down. None of
+them are problems. Problems live in each **algorithm's** own `Problems/` folder and are
+how you drill it once you have built it:
 
 ```
-04-TwoPointers/
-├── TwoPointers.cs              ← the algorithms: ConvergingPointers, FastSlowPointers, …
-└── Problems/
-    ├── ThreeSum.cs             ← problems that USE them
-    ├── ContainerWithMostWater.cs
-    └── TrappingRainWater.cs
+04-TwoPointers/                      the node
+└── ConvergingPointers/              the algorithm
+    ├── ConvergingPointers.cs        ← the thing to learn
+    ├── ConvergingPointers.md
+    └── Problems/
+        ├── ThreeSum.cs              ← problems that USE it
+        ├── ContainerWithMostWater.cs
+        └── TrappingRainWater.cs
 ```
 
 `ConvergingPointers` is the thing to learn. `ThreeSum` is one of half a dozen problems
@@ -149,30 +151,48 @@ A node is finished when its algorithms come out cold a week later.
 01-DataStructures/            what it is, how it works
 ├── TEMPLATE.md
 ├── MEMORY-MODEL.md        stack vs heap, and what a byte costs
-├── TEMPLATE.md
 ├── 01-Arrays/  Memory.md · Arrays.cs
 └── 02-LinkedLists/ …
 
 02-Algorithms/                what you can do with it
 ├── TEMPLATE.md
-└── 04-TwoPointers/
-    ├── TwoPointers.md     the guide
-    ├── TwoPointers.cs     runnable: -- trace  -- test  -- bench  -- compare
-    └── Problems/
-        ├── ThreeSum.md    ThreeSum.cs
-        └── …
+└── 01-ArraysAndHashing/              the node
+    ├── HashMapCounting/              the algorithm
+    │   ├── HashMapCounting.cs        runnable: -- trace -- test -- compare -- bench
+    │   ├── HashMapCounting.md        the guide
+    │   └── Problems/                 everything that practises it
+    │       ├── TwoSum.cs             TwoSum.md
+    │       ├── ValidAnagram.cs       ValidAnagram.md
+    │       └── …
+    ├── PrefixSums/
+    │   ├── PrefixSums.cs · PrefixSums.md
+    │   └── Problems/ …
+    └── DifferenceArray/
+        ├── DifferenceArray.cs · DifferenceArray.md
+        └── Problems/ …
 ```
 
-Algorithms are **files**, not folders — nothing is ever more than two levels deep. Nodes
-holding several distinct named algorithms (Sorting, Trees, Graphs, Heap, DP, Advanced
-Graphs) get one `.md`/`.cs` pair per algorithm at node level.
+**One folder per algorithm.** Its own `.cs`/`.md` pair sits at the top; everything that
+practises it lives in `Problems/` beside them.
+
+The point of folding `Problems/` under the algorithm rather than the node: a node like
+`16-Graphs` holds seven algorithms, and a single flat `Problems/` would become seventy
+files with nothing saying which one drills `TopologicalSort` and which drills
+`BipartiteCheck`. Here that is structural instead of a naming convention.
+
+`dotnet run` is path-relative, so you run an algorithm from its own folder:
+
+```bash
+cd 02-Algorithms/01-ArraysAndHashing/HashMapCounting
+dotnet run HashMapCounting.cs -- trace
+```
 
 Folders are created when you start that algorithm; the checklist below is the map, the
 repo shows real progress.
 
 ---
 
-## The 93 algorithms
+## The 87 algorithms
 
 ### 01 · Arrays & Hashing — *needs: nothing*
 - [x] HashMapCounting — frequency, membership, seen-before
@@ -182,13 +202,20 @@ repo shows real progress.
 - [ ] InPlaceWritePointer — compaction without extra space
 
 ### 02 · Sorting — *needs: 01*
-- [ ] InsertionSort — the O(n²) baseline everything is measured against
-- [ ] MergeSort
-- [ ] QuickSort
-- [ ] HeapSort
-- [ ] CountingSort
-- [ ] RadixSort
-- [ ] Quickselect
+- [ ] MergeSort — the one sorting algorithm to know cold
+
+> **Deliberately one, not seven.** MergeSort is the pick because it is the only common
+> sort that is **O(n log n) in the worst case *and* stable**, it is the divide-and-conquer
+> template that node 09 builds on, and its merge step is reused directly by
+> `MergeFromBack` (04) and `KWayMerge` (12). It is also the one that works on a linked
+> list, where QuickSort's random access is unavailable.
+>
+> What was cut, and where to look if it ever comes up: **QuickSort** (faster in practice,
+> but O(n²) worst case and unstable), **HeapSort** (covered by `SiftUpSiftDown` in 12),
+> **Quickselect** (selection, not sorting — `TopKBoundedHeap` in 12 solves the same
+> problems), **InsertionSort**, **CountingSort**, **RadixSort**. In production you call
+> `Array.Sort`, which is introsort — quicksort, falling back to heapsort on bad pivots and
+> insertion sort for small spans.
 
 ### 03 · Strings — *needs: 01*
 - [ ] KMP
@@ -372,11 +399,15 @@ dotnet run Arrays.cs -- ops           # each operation and what it cost
 dotnet run Arrays.cs -- complexity    # measured growth curves
 ```
 
-Algorithm files follow the same shape:
+Algorithm files follow the same shape, run from the algorithm's own folder:
 
 ```bash
-dotnet run MergeSort.cs -- trace      # step by step on a small input
-dotnet run MergeSort.cs -- test       # unit tests
-dotnet run MergeSort.cs -- bench      # steps and milliseconds
-dotnet run MergeSort.cs -- compare    # brute force vs the algorithm
+cd 02-Algorithms/01-ArraysAndHashing/HashMapCounting
+dotnet run HashMapCounting.cs -- trace      # step by step on a small input
+dotnet run HashMapCounting.cs -- test       # unit tests
+dotnet run HashMapCounting.cs -- compare    # brute force vs the algorithm
+dotnet run HashMapCounting.cs -- bench      # steps and milliseconds
 ```
+
+Every algorithm file carries **both** implementations — the brute force and the
+optimised one — so `-- compare` can actually run the comparison rather than assert it.
