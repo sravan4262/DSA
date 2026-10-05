@@ -238,7 +238,7 @@ repo shows real progress.
 - [x] MergeFromBack
 
 ### 05 · Stack — *needs: 01*
-- [ ] MonotonicStack
+- [x] MonotonicStack
 - [ ] IterativeDFS
 - [ ] AuxiliaryStateStack — min-stack and friends
 
