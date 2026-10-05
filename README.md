@@ -175,7 +175,7 @@ repo shows real progress.
 ## The 93 algorithms
 
 ### 01 · Arrays & Hashing — *needs: nothing*
-- [ ] HashMapCounting — frequency, membership, seen-before
+- [x] HashMapCounting — frequency, membership, seen-before
 - [ ] PrefixSums — prefix and suffix accumulation
 - [ ] DifferenceArray — range updates in O(1)
 - [ ] Kadane — maximum subarray
