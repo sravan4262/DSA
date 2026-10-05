@@ -70,7 +70,7 @@ how you drill it once you have built it:
 
 ```
 04-TwoPointers/                      the node
-└── ConvergingPointers/              the algorithm
+└── 01-ConvergingPointers/           the algorithm
     ├── ConvergingPointers.cs        ← the thing to learn
     ├── ConvergingPointers.md
     └── Problems/
@@ -156,24 +156,33 @@ A node is finished when its algorithms come out cold a week later.
 
 02-Algorithms/                what you can do with it
 ├── TEMPLATE.md
-└── 01-ArraysAndHashing/              the node
-    ├── HashMapCounting/              the algorithm
-    │   ├── HashMapCounting.cs        runnable: -- trace -- test -- compare -- bench
-    │   ├── HashMapCounting.md        the guide
-    │   └── Problems/                 everything that practises it
-    │       ├── TwoSum.cs             TwoSum.md
-    │       ├── ValidAnagram.cs       ValidAnagram.md
+└── 01-ArraysAndHashing/                 the node
+    ├── 01-HashMapCounting/              the algorithm
+    │   ├── HashMapCounting.cs           runnable: -- trace -- test -- compare -- bench
+    │   ├── HashMapCounting.md           the guide
+    │   └── Problems/                    everything that practises it
+    │       ├── TwoSum.cs                TwoSum.md
+    │       ├── ValidAnagram.cs          ValidAnagram.md
     │       └── …
-    ├── PrefixSums/
+    ├── 02-PrefixSums/
     │   ├── PrefixSums.cs · PrefixSums.md
     │   └── Problems/ …
-    └── DifferenceArray/
-        ├── DifferenceArray.cs · DifferenceArray.md
-        └── Problems/ …
+    ├── 03-DifferenceArray/              needs 02 — it is the inverse
+    ├── 04-Kadane/
+    └── 05-InPlaceWritePointer/
 ```
 
 **One folder per algorithm.** Its own `.cs`/`.md` pair sits at the top; everything that
 practises it lives in `Problems/` beside them.
+
+**Both levels are numbered, and the numbers are the learning order** — work through
+`01-ArraysAndHashing/01-…` to `05-…`, then move to the next node. Within a node the
+numbering matches the checklist below, and where one algorithm needs another it comes
+first (`03-DifferenceArray` after `02-PrefixSums`). So the folder listing *is* the
+syllabus at both levels, and `ls` tells you where you are.
+
+Only the folders carry numbers. The `.cs` and `.md` keep the plain algorithm name, so
+`dotnet run Kadane.cs` stays short and the class names stay clean.
 
 The point of folding `Problems/` under the algorithm rather than the node: a node like
 `16-Graphs` holds seven algorithms, and a single flat `Problems/` would become seventy
@@ -183,7 +192,7 @@ files with nothing saying which one drills `TopologicalSort` and which drills
 `dotnet run` is path-relative, so you run an algorithm from its own folder:
 
 ```bash
-cd 02-Algorithms/01-ArraysAndHashing/HashMapCounting
+cd 02-Algorithms/01-ArraysAndHashing/01-HashMapCounting
 dotnet run HashMapCounting.cs -- trace
 ```
 
@@ -402,7 +411,7 @@ dotnet run Arrays.cs -- complexity    # measured growth curves
 Algorithm files follow the same shape, run from the algorithm's own folder:
 
 ```bash
-cd 02-Algorithms/01-ArraysAndHashing/HashMapCounting
+cd 02-Algorithms/01-ArraysAndHashing/01-HashMapCounting
 dotnet run HashMapCounting.cs -- trace      # step by step on a small input
 dotnet run HashMapCounting.cs -- test       # unit tests
 dotnet run HashMapCounting.cs -- compare    # brute force vs the algorithm

@@ -1,6 +1,6 @@
 # DifferenceArray
 
-**Node:** 01 · Arrays & Hashing · **Needs:** array, [PrefixSums](../PrefixSums/PrefixSums.md)
+**Node:** 01 · Arrays & Hashing · **Needs:** array, [PrefixSums](../02-PrefixSums/PrefixSums.md)
 
 > Sections 7 and 10 are filled in — those numbers come from running the code, not from
 > understanding it. Everything else is yours to write. Re-explaining is the exercise.
