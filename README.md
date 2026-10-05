@@ -176,8 +176,8 @@ repo shows real progress.
 
 ### 01 · Arrays & Hashing — *needs: nothing*
 - [x] HashMapCounting — frequency, membership, seen-before
-- [ ] PrefixSums — prefix and suffix accumulation
-- [ ] DifferenceArray — range updates in O(1)
+- [x] PrefixSums — prefix and suffix accumulation
+- [x] DifferenceArray — range updates in O(1)
 - [ ] Kadane — maximum subarray
 - [ ] InPlaceWritePointer — compaction without extra space
 
