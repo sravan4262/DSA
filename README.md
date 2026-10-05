@@ -239,7 +239,7 @@ repo shows real progress.
 
 ### 05 · Stack — *needs: 01*
 - [x] MonotonicStack
-- [ ] IterativeDFS
+- [x] IterativeDFS
 - [ ] AuxiliaryStateStack — min-stack and friends
 
 ### 06 · Binary Search — *needs: 02, 04*
