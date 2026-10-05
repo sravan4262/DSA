@@ -4,6 +4,51 @@
 //
 // Node 01 · Arrays & Hashing.  Needs: array, hash table.
 //
+// -----------------------------------------------------------------------------
+// WHAT THIS IS
+//
+// Not really one algorithm — a pattern you will reach for more than any other.
+// Whenever a nested loop exists only to ask "have I seen this before?", you can
+// delete the inner loop by writing the answer down as you go.
+//
+//   brute force   for each element, re-scan the rest          O(n^2) time, O(1) space
+//   this          one pass, a hash table carries the memory   O(n) time,   O(n) space
+//
+// You are buying time with memory. That is the entire trade, and it is the most
+// common optimisation in the whole roadmap.
+//
+// THE THREE JOBS, and how to pick
+//
+//   frequency      how many times does each value appear?   Dictionary<T,int>
+//   membership     is it in the set at all?                 HashSet<T>
+//   seen-before    have I passed this already?              HashSet<T>, filled
+//                                                           DURING the pass
+//
+// One question decides it: do you need a COUNT, or just YES/NO? A count needs
+// Dictionary<T,int>. Yes/no needs HashSet<T> — the same machinery minus the
+// value field, so it is smaller and reads clearer.
+//
+// Membership and seen-before use the identical type and differ only in WHEN the
+// set is filled. Membership builds it up front from the whole input. Seen-before
+// starts empty and grows as you walk, which is what makes "before" mean anything.
+//
+// THE CONCRETE PROBLEM USED HERE
+//
+// Find the first value whose second occurrence you reach, or -1 if every value
+// is distinct. It is the smallest problem that needs seen-before, and it gives
+// the brute force a fair fight — both walk left to right, so both agree on what
+// "first" means.
+//
+// WHEN NOT TO USE IT
+//
+// The O(n) memory is not free, and neither is a hash probe — it computes a hash,
+// takes a modulus and follows two dependent memory reads, so call it 5-20x the
+// cost of one comparison. For a handful of elements the brute force wins on wall
+// clock. If the input is already sorted, two pointers beat both and cost nothing.
+// And if the keys are a small bounded range, a plain int[] counter array beats a
+// Dictionary outright — no hashing, no collisions, perfect cache behaviour.
+// -----------------------------------------------------------------------------
+//
 // This one file IS the program. Put a breakpoint anywhere and press F5.
 //
 //   dotnet run HashMapCounting.cs                everything
