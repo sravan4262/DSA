@@ -112,6 +112,9 @@ many bytes anything costs.
 For revision, [DS in a Nutshell](01-DataStructures/DS-IN-A-NUTSHELL.md) is all eleven
 structures on one page each — operations, costs, trade-offs and when each one loses to
 another — plus the Big-O and memory grids side by side.
+[Algorithms in a Nutshell](02-Algorithms/ALGOS-IN-A-NUTSHELL.md) is the same thing for the
+algorithms, organised around the **invariant** rather than the memory layout, and it grows
+by one entry as each algorithm is written.
 
 Done with a structure when you can answer, cold: *where does it live, what does one
 element cost in bytes, and which operation is expensive because of that?*

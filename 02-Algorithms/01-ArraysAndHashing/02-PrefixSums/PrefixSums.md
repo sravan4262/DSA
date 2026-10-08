@@ -130,8 +130,34 @@ n queries over an array of n, each spanning the whole array.
 
 > Three questions you must answer cold. If you can't, you are not finished.
 
-- Why is the prefix array **n+1** long, and what specific bug does the leading zero
-  prevent?
+- Why is the prefix array **n+1** long? The appendix below says it removes the `l == 0`
+  special case — don't quote that. Write the exact expression that crashes without the
+  leading zero, with real numbers in it, and name the index it tries to read.
 - A single write to `a[5]` happens between two queries. What breaks, how expensive is it
   to fix, and what structure would you reach for instead?
 - Why does `Build` return `long[]` when the input is `int[]`?
+
+---
+
+## Appendix — why both arrays are `n + 1`
+
+Reference, not an exercise. Both PrefixSums and DifferenceArray carry one slot more than
+the data — for **opposite reasons, at opposite ends.**
+
+| | prefix sum | difference array |
+| --- | --- | --- |
+| the extra slot is at the | **front** — index 0 | **back** — index n |
+| it holds | `0` | the cancel that falls off the end |
+| it exists for the | **query** | **update** |
+| because | `prefix[r+1] - prefix[l]` needs `prefix[0]` when `l = 0` | `diff[r+1] -= v` needs index `n` when `r = n-1` |
+| is it ever read? | **yes** — part of every query starting at 0 | **no** — the rebuild walks `0..n-1` only |
+| without it | `l == 0` needs a special case | you write `r` instead of `r+1`, silently dropping the last element of every range |
+
+**Prefix sum:** `prefix[0] = 0` is "the sum of no elements". It gives `prefix[1] =
+prefix[0] + a[0]` something valid to start from, and it makes the query formula work with
+no `if` in it.
+
+**Difference array:** `diff[n]` is a bin. An update covering the last element still has to
+write its cancel somewhere, and nothing ever reads it back.
+
+> One array needs a **zero to start from**. The other needs a **bin to throw into**.

@@ -128,3 +128,71 @@
   decides whether it's a bug at all?
 - Why can Kadane commit to a decision at index `i` and never revisit it? Give the
   property of negative running sums that makes that safe.
+
+---
+
+## Appendix — the short version
+
+Reference, not an exercise. This is the explanation to fall back on when the
+subarray-counting gets confusing.
+
+### The decision
+
+At index `i` you want the best subarray **ending at `i`**. It must contain `arr[i]`. The
+only open question is whether it also includes the stuff before:
+
+```
+include it      maxEnding + arr[i]
+don't           arr[i]
+```
+
+You are adding `arr[i]` **either way**. The only difference between those two lines is
+whether you also add `maxEnding`. So:
+
+| `maxEnding` | do | because |
+| --- | --- | --- |
+| **positive** | include it | adding a positive number makes the result bigger |
+| **negative** | drop it | adding a negative number makes the result smaller |
+
+`Math.Max(arr[i], maxEnding + arr[i])` is that sign check written as a comparison — when
+`maxEnding` is negative, `arr[i]` is automatically the bigger of the two.
+
+### Why one comparison settles many subarrays
+
+Take three elements. Line up the comparison at index 1 and the one at index 2:
+
+```
+index 1:    a0 + a1          vs    a1            ->  differ by a0
+index 2:    a0 + a1 + a2     vs    a1 + a2       ->  differ by a0
+```
+
+**Same difference.** `a2` is added to both sides, so it cancels out of the comparison
+entirely. You already learned the sign of `a0` at index 1, so the second comparison has no
+new information in it.
+
+Which family you drop depends on which way the first comparison went:
+
+| at index 1 | means | survivor | dropped at index 2 |
+| --- | --- | --- | --- |
+| `a0 + a1 < a1` | `a0` negative | start **1** | **`[0..2]`** |
+| `a0 + a1 > a1` | `a0` positive | start **0** | `[1..2]` |
+
+Both rows generalise: whatever is dropped stays dropped, because every later element lands
+on both candidates equally and the gap never closes.
+
+### Worked, `arr = [3, -5, 4, 2]`
+
+| i | `arr[i]` | `maxEnding` in | sign | best ending at `i` |
+| --- | --- | --- | --- | --- |
+| 0 | 3 | — | — | `3` = **3** |
+| 1 | −5 | **3** | + | `3, -5` = **−2** |
+| 2 | 4 | **−2** | − | `4` = **4** |
+| 3 | 2 | **4** | + | `4, 2` = **6** |
+
+```
+maxEnding:   3,  -2,   4,   6
+res:         3,   3,   4,   6     <- answer 6, from [4, 2]
+```
+
+`res` is a second variable because `maxEnding` is allowed to fall (step 1, 3 → −2) and the
+answer is not.

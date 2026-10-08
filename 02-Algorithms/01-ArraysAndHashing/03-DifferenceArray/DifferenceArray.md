@@ -123,3 +123,47 @@ n updates over an array of n, each spanning the whole array, then one read pass.
 - Fill in both blanks and say why they're the same sentence pointed two ways:
   *PrefixSums makes range ______ O(1) and leaves ______ O(n). DifferenceArray makes range
   ______ O(1) and leaves ______ O(n).*
+
+---
+
+## Appendix — the name for it
+
+Reference, not an exercise. Prefix sum and difference array are **discrete calculus**:
+
+| Continuous | Discrete |
+| --- | --- |
+| derivative `f'(x)` | **difference array** — `a[i] − a[i−1]` |
+| integral `∫f` | **prefix sum** — `a[0] + … + a[i]` |
+| `∫f' = f` | prefix sum of differences = the original array |
+
+They are inverse operators, exactly like `d/dx` and `∫`. Which is why step 3 of a
+difference array *is* a prefix sum — you use one to undo the other.
+
+Nobody will ask you this in an interview. It is here because if you ever blank on which
+direction is which, *"difference = derivative, prefix = integral, they undo each other"*
+gets you back.
+
+---
+
+## Appendix — why both arrays are `n + 1`
+
+Reference, not an exercise. Both PrefixSums and DifferenceArray carry one slot more than
+the data — for **opposite reasons, at opposite ends.**
+
+| | prefix sum | difference array |
+| --- | --- | --- |
+| the extra slot is at the | **front** — index 0 | **back** — index n |
+| it holds | `0` | the cancel that falls off the end |
+| it exists for the | **query** | **update** |
+| because | `prefix[r+1] - prefix[l]` needs `prefix[0]` when `l = 0` | `diff[r+1] -= v` needs index `n` when `r = n-1` |
+| is it ever read? | **yes** — part of every query starting at 0 | **no** — the rebuild walks `0..n-1` only |
+| without it | `l == 0` needs a special case | you write `r` instead of `r+1`, silently dropping the last element of every range |
+
+**Prefix sum:** `prefix[0] = 0` is "the sum of no elements". It gives `prefix[1] =
+prefix[0] + a[0]` something valid to start from, and it makes the query formula work with
+no `if` in it.
+
+**Difference array:** `diff[n]` is a bin. An update covering the last element still has to
+write its cancel somewhere, and nothing ever reads it back.
+
+> One array needs a **zero to start from**. The other needs a **bin to throw into**.
