@@ -208,9 +208,19 @@ whether to also include what came before. You add `arr[i]` **either way** — th
 difference between the two candidates is whether you also add `maxEnding`. So carry it
 when it is positive, drop it when it is negative.
 
-One comparison settles a whole family because `arr[i]` lands on **both** candidates
-equally and cancels out of the comparison — the deciding quantity is the same number you
-already checked the sign of.
+**The rule, both halves:**
+
+| `maxEnding` | what happens | what you drop |
+| --- | --- | --- |
+| **negative** | restart — `maxEnding = arr[i]` | every subarray starting **before** `i` |
+| **positive** | extend — `maxEnding += arr[i]` | every subarray starting **at** `i` |
+
+One family dies either way. The subarrays **ending** at `i` are never dropped — one of
+them is the winner.
+
+**The trap** — the test is `maxEnding < 0`, **not** `maxEnding < arr[i]`. With
+`maxEnding = 5` and `arr[i] = 10` you still extend, because `15 > 10`. Do the algebra and
+`arr[i]` cancels out of the comparison entirely.
 
 **Two variables, not one** — `maxEnding` is allowed to fall; `res` is a high-water mark
 and is not.

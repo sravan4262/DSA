@@ -149,13 +149,48 @@ don't           arr[i]
 You are adding `arr[i]` **either way**. The only difference between those two lines is
 whether you also add `maxEnding`. So:
 
-| `maxEnding` | do | because |
-| --- | --- | --- |
-| **positive** | include it | adding a positive number makes the result bigger |
-| **negative** | drop it | adding a negative number makes the result smaller |
+### The rule, both halves
 
-`Math.Max(arr[i], maxEnding + arr[i])` is that sign check written as a comparison — when
+| `maxEnding` | what happens | what you drop |
+| --- | --- | --- |
+| **negative** | restart — `maxEnding = arr[i]` | every subarray starting **before** `i` |
+| **positive** | extend — `maxEnding += arr[i]` | every subarray starting **at** `i` |
+
+One of the two families dies either way. You never drop the subarrays **ending** at `i` —
+one of them is the winner.
+
+`Math.Max(arr[i], maxEnding + arr[i])` is that sign check written as a comparison: when
 `maxEnding` is negative, `arr[i]` is automatically the bigger of the two.
+
+### The trap: the test is against ZERO, not against `arr[i]`
+
+> *"restart when the previous sum is smaller than the current element"* — **wrong.**
+
+```
+maxEnding = 5,  arr[i] = 10        5 < 10, but you do NOT restart:
+
+maxEnding + arr[i]  =  5 + 10  =  15     ← wins
+arr[i]              =       10  =  10
+```
+
+Do the algebra and `arr[i]` cancels out of the comparison completely:
+
+```
+maxEnding + arr[i]  <  arr[i]
+maxEnding           <  0
+```
+
+**Only the sign of `maxEnding` decides.** The current element never enters it.
+
+### Naming
+
+The same variable goes by three names across this repo and the usual write-ups — they are
+all the running "best ending here":
+
+| `Kadane.cs` | this appendix | most articles |
+| --- | --- | --- |
+| `current` | `maxEnding` | `maxEnding` / `maxSoFar` |
+| `best` | `res` | `res` / `maxGlobal` |
 
 ### Why one comparison settles many subarrays
 
