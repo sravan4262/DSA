@@ -230,7 +230,7 @@ repo shows real progress.
 > insertion sort for small spans.
 
 ### 03 · Strings — *needs: 01*
-- [ ] KMP
+- [x] KMP
 - [ ] RabinKarp
 - [ ] Manacher
 
